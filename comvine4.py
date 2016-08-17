@@ -14,9 +14,9 @@ from functools import partial
 import GP as gp
 #plt.ion()
 #plt.style.use('ggplot')
-population=18
+population=50
 
-model1=gc2.heteregeneousModel(population,[0.4,10,0.3],False,False,"gradient","uniform",False)
+model1=gc2.heteregeneousModel(population,[0.4,10,0.3],True,True,"gradient","uniform",False)
 #model1=gc2.heteregeneousModel(50,[5,0.2,1,0.3],True,True,"powerlaw","uniform",False)
 model1.Animate()
 #estimate=lk2.Estimation(model1.record,model1.geo,method="powerlaw")
@@ -27,8 +27,8 @@ estimate=lk2.Estimation(model1.record,model1.geo,method="gradient")
 #Metro=mp3.multiMetropolis(1000,[partial(estimate.GammaPriorGeneralPosterior,i=0),partial(estimate.GammaPriorGeneralPosterior,i=1),partial(estimate.GammaPriorGeneralPosterior,i=2),partial(estimate.GammaPriorGeneralPosterior,i=3)],[3,0.1,0.9,1],[0.5,0.5,0.4,0.4])
 #InitialGP=np.zeros(population*(population-1)/2)
 InitialGP=gp.InitialGP(estimate.DistanceMatrix,np.array((1,1)))
-GPDoc=gp.GaussianProcess(estimate.DistanceMatrix,np.array((1,0.1)))
-#################
+GPDoc=gp.GaussianProcess(estimate.DistanceMatrix,np.array((1,np.mean(estimate.DistanceMatrix))))
+################
 InitialGP=GPDoc.SampleForGP(np.zeros(population*(population-1)/2))
 BetaMatrix=model1.BetaMatrix
 BetaMatrix3=cr.BetaMatrix(model1.DistanceMatrix,[1,1])
@@ -43,5 +43,8 @@ Metro.showplot(1)
 Metro.printall(1)
 Metro.showplot(2)
 Metro.printall(2)
-Metro.showplot(3)
-Metro.printall(3)
+Metro.plotcountour(0,1)
+Metro.plotcountour(1,2)
+Metro.plotcountour(0,2)
+gp.GPPlot(model1.DistanceMatrix,Metro.recordGP)
+gp.kernelFunctonPlot(model1.DistanceMatrix,Metro.recordGP,Metro.record,"gradient")

@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import GP as gp
 '''
 class coordinate:
     def __init__(self,x=0.0,y=0.0):
@@ -107,11 +108,11 @@ def DistanceMatrix(geo):
         DistanceMatrix[i,i]=0
     DistanceMatrix=np.sqrt(DistanceMatrix)
     return DistanceMatrix 
-def BetaMatrix(DistanceMatrix,parameter,method="gradient"):   
+def BetaMatrix(DistanceMatrix,parameter,method="gradient",GP=None):   
     if method=="gradient":
         beta0=parameter[0]
         phi=parameter[1]
-        BetaMatrix=beta0*np.exp(-DistanceMatrix/phi)
+        BetaMatrix=beta0*np.exp(-DistanceMatrix*phi)
         #K takes distance -arg paratemeters->
         #returns 
         #self.BetaMatrix=np.array(BetaMatrix)
@@ -125,7 +126,27 @@ def BetaMatrix(DistanceMatrix,parameter,method="gradient"):
         omega=parameter[2]
         BetaMatrix=beta0*1/(phi**2+DistanceMatrix**2)**omega
         return BetaMatrix
-
+    elif method=="GaussianProcess":
+        m=GP.size
+        n=(1+np.sqrt(1+8*m))/2
+        BetaMatrix=gp.LowerTriangularVectorToSymmetricMatrix(GP,n)
+        return np.exp(BetaMatrix)
+    elif method=="gradientGaussianProcess":
+        beta0=parameter[0]
+        phi=parameter[1]
+        n=(1+np.sqrt(1+8*GP.size))/2
+        BetaMatrix=beta0*np.exp(-DistanceMatrix*phi)
+        BetaMatrix=BetaMatrix*np.exp(gp.LowerTriangularVectorToSymmetricMatrix(GP,n))
+        return BetaMatrix
+    elif method=="powerlawGaussianProcess":
+        parameter=np.array(parameter)
+        beta0=parameter[0]
+        phi=parameter[1]
+        omega=parameter[2]
+        n=(1+np.sqrt(1+8*GP.size))/2
+        BetaMatrix=beta0*1/(phi**2+DistanceMatrix**2)**omega
+        BetaMatrix=BetaMatrix*np.exp(gp.LowerTriangularVectorToSymmetricMatrix(GP,n))
+        return BetaMatrix
 def plotcoor(geo):
     plt.scatter(geo[:,0],geo[:,1])
     #plt.figure()

@@ -41,8 +41,9 @@ def CovarianceMatrix(DistanceMatrix,parameter):
     #DifferenceMatrix=DifferenceMatrix**2/l# square distance
     #DifferenceMatrix=abs(DifferenceMatrix/(2*l))#abs distance
     CovarianceMatrix=(sigma**2)*np.exp(-(DifferenceMatrix**2)/l) #Covariance matrix sigma^2*exp(-|d-d`|^2/2l)
-    
-    return CovarianceMatrix
+    K=CovarianceMatrix
+    K = K + np.eye(K.shape[0]) * 1e-7
+    return K
 '''Test code
 a=np.array((1,2,3,4,5,6,7,8,9))
 a.shape=(3,3)
@@ -98,6 +99,71 @@ def BetaMatrixPlot(DistanceMatrix,BetaMatrixTumple,i):
     for j in range(i):
         vectorBeta=LowerTriangularToVector(BetaMatrixTumple[j])
         plt.plot(vectorDistance[indices],vectorBeta[indices],'k',color=color[j])
+    plt.show()
+def generalBetaMatrixPlot(DistanceMatrix,BetaMatrix):
+    plt.clf()
+    vectorDistance=LowerTriangularToVector(DistanceMatrix)
+    indices=np.argsort(vectorDistance)
+    plt.plot(vectorDistance[indices],vectorBeta[indices],'k')
+def GPPlot(DistanceMatrix,recordGP):
+    '''
+    plot the function distance->infect rate
+    or called "kernel function"
+    '''
+    plt.clf()
+    vectorDistance=LowerTriangularToVector(DistanceMatrix)
+    indices=np.argsort(vectorDistance)
+    i = recordGP.shape[0]
+    for j in range(i):
+        vectorBeta=recordGP[j,:]
+        plt.plot(vectorDistance[indices],vectorBeta[indices],'k')
+    plt.show()
+    plt.show()
+def kernelFunctonPlot(DistanceMatrix,recordGP,record,method):
+    plt.clf()
+    iterNa=recordGP.shape[0]
+    vectorDistance=LowerTriangularToVector(DistanceMatrix)
+    indices=np.argsort(vectorDistance)
+   
+    for j in range(iterNa):
+        BetaMatrix=cr.BetaMatrix(DistanceMatrix,record[j,:],method)
+        BetaVectorBaseline=LowerTriangularToVector(BetaMatrix)
+        BetaVector=np.exp(np.log(BetaVectorBaseline)+recordGP[j])
+        plt.plot(vectorDistance[indices],BetaVectorBaseline[indices],'k',color="green")
+        plt.plot(vectorDistance[indices],BetaVector[indices],'k')
+    plt.show()
+def kernelFunctonPlotRebuild(DistanceMatrix,recordGP,meanParameter,method,simulationParameter,InitialGP):
+    plt.clf()
+    iterNa=recordGP.shape[0]
+    vectorDistance=LowerTriangularToVector(DistanceMatrix)
+    indices=np.argsort(vectorDistance)
+    BetaMatrix=cr.BetaMatrix(DistanceMatrix,meanParameter,"gradient")
+    BetaVectorBaseline=LowerTriangularToVector(BetaMatrix)
+
+    BetaMatrixSimulation=cr.BetaMatrix(DistanceMatrix,np.delete(simulationParameter,-1),method)
+    BetaVectorSimulation=LowerTriangularToVector(BetaMatrixSimulation)
+    plt.plot(vectorDistance[indices],BetaVectorSimulation[indices],'k',color="green")
+    plt.plot(vectorDistance[indices],BetaVectorBaseline[indices],'k',color="yellow")
+    '''
+    maxGP=recordGP.max(0)
+    BetaVector=np.exp(np.log(BetaVectorBaseline)+maxGP)
+    plt.plot(vectorDistance[indices],BetaVector[indices],'k')
+    minGP=recordGP.min(0)
+    BetaVector=np.exp(np.log(BetaVectorBaseline)+minGP)
+    plt.plot(vectorDistance[indices],BetaVector[indices],'k')
+    '''
+    medianGP=np.median(recordGP,0)
+    BetaVector=np.exp(np.log(BetaVectorBaseline)+medianGP)
+    plt.plot(vectorDistance[indices],BetaVector[indices],'k')
+    upper95GP=np.percentile(recordGP,95,0)
+    BetaVector=np.exp(np.log(BetaVectorBaseline)+upper95GP)
+    plt.plot(vectorDistance[indices],BetaVector[indices],'k',color="red")
+    lower95GP=np.percentile(recordGP,5,0)
+    BetaVector=np.exp(np.log(BetaVectorBaseline)+lower95GP)
+    plt.plot(vectorDistance[indices],BetaVector[indices],'k',color="blue")
+    BetaVector=np.exp(np.log(BetaVectorBaseline)+InitialGP)
+    plt.plot(vectorDistance[indices],BetaVector[indices],'k',color="brown")
+
     plt.show()
 '''
 a=np.array((1,2,3,4,5,6,7,8))

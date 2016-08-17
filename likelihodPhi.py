@@ -17,6 +17,7 @@ class Estimation:
         [self.days,self.num_people]=record.shape
         self.method=method
         self.DistanceMatrix=cr.DistanceMatrix(self.geo)
+        self.change=self.changeMatrix()
     def transform_prob(self,state,gamma,BetaMatrix):
         """
         Special edition for Likelihood
@@ -82,12 +83,28 @@ class Estimation:
         ####Add random  effect GP
         BetaMatrix=np.exp(np.log(BetaMatrix)+gp.LowerTriangularVectorToSymmetricMatrix(GP,BetaMatrix.shape[0]))
         probabilityMatrix=self.ProbabilityMatrix(BetaMatrix,gamma)
-        change=self.changeMatrix()
+        change=self.change
         probabilityMatrix[change==0]=1-probabilityMatrix[change==0]
         loglikelihoodMatrix=np.log(probabilityMatrix)
         logLikelihood=loglikelihoodMatrix.sum(1).sum()
         return logLikelihood 
-   
+    def NonParametricGPLikelihood(self,GP,gamma):
+        '''
+        Likelihood for non-parametric model
+        '''
+        BetaMatrix=cr.BetaMatrix(self.DistanceMatrix,None,GP,"GaussianProcess")
+        probabilityMatrix=self.ProbabilityMatrix(BetaMatrix,gamma)
+        change=self.change
+        probabilityMatrix[change==0]=1-probabilityMatrix[change==0]
+        loglikelihoodMatrix=np.log(probabilityMatrix)
+        logLikelihood=loglikelihoodMatrix.sum(1).sum()
+        return logLikelihood
+    def GaussinPriorNonparametricGP(self,gamma,GaussianProcess,GP):
+        '''
+        Not test
+        '''
+        return GaussianProcess.GPprior(GP)+self.NonParametricGPLikelihood(GP,gamma)
+
 
     def GammaPriorGeneralPosterior(self,parameter,GP ,i):
         from scipy.stats import gamma
@@ -96,10 +113,13 @@ class Estimation:
     def GaussianPriorGP(self,parameter,GaussianProcess,GP):
         '''
         Not fully test 
+        but worked
         '''
         return GaussianProcess.GPprior(GP)+self.Likelihood(np.array((parameter)),GP)
         
-
+    def GaussianStandardPriorGP(self,parameter,GaussianPriorGP,GP):
+        from scipy.stats import multivariate_normal
+        return multivariate_normal.logpdf(GP,mean=None,cov=GaussianPriorGP.CovarianceMatrix)+self.Likelihood(np.array((parameter)),GP)
 
 '''
 model1=gc.heteregeneousModel(100,0.4,0.3,10,True,False)
